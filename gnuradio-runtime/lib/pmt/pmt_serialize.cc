@@ -259,8 +259,7 @@ serialize(pmt_t obj, std::streambuf &sb)
   if(is_string(obj)) {
     const std::string s = to_string(obj);
     size_t len = s.size();
-    pmt_string = dynamic_cast<pmt_string*>(obj.get());
-    if (obj->next()) {
+    if (is_symbol(obj)) {
       // Interned
       ok = serialize_untagged_u8(PST_SYMBOL, sb);
     } else {

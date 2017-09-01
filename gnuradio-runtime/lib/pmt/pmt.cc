@@ -262,7 +262,7 @@ get_symbol_hash_table()
   return &s_symbol_hash_table;
 }
 
-pmt_string::pmt_string(const std::string &name) : d_name(name){}
+pmt_string::pmt_string(const std::string &name, bool interned) : d_name(name), d_interned(interned) {}
 
 
 static unsigned int
@@ -280,6 +280,12 @@ hash_string(const std::string &s)
     }
   }
   return h;
+}
+
+bool
+is_symbol(const pmt_t& p)
+{
+  return p->is_string() && _string(p)->is_interned();
 }
 
 pmt_t
@@ -304,7 +310,8 @@ string_to_symbol(const std::string &name)
   }
   
   // Nope.  Make a new one.
-  pmt_t sym = pmt_t(new pmt_string(name));
+  std::cout << "Adding " << name << "\n";
+  pmt_t sym = pmt_t(new pmt_string(name, true));
   _string(sym)->set_next((*get_symbol_hash_table())[hash]);
   (*get_symbol_hash_table())[hash] = sym;
   return sym;
@@ -326,14 +333,13 @@ symbol_to_string(const pmt_t& sym)
   return _string(sym)->name();
 }
 
-
 pmt_t
-from_string(const std::string &name, bool interned)
+from_string(const std::string &str, bool interned)
 {
   if (interned) {
     return string_to_symbol(str);
   } else {
-    return pmt_t(new pmt_string(str));
+    return pmt_t(new pmt_string(str, false));
   }
 }
 
@@ -351,39 +357,6 @@ is_string(const pmt_t& p)
 {
   return p->is_string();
 }
-
-////////////////////////////////////////////////////////////////////////////
-//                             Non-interned strings
-////////////////////////////////////////////////////////////////////////////
-
-// pmt_string::pmt_string(std::string value) : d_value(value) {}
-
-// bool
-// is_string(const pmt_t& p)
-// {
-//   return p->is_string();
-// }
-
-
-// pmt_t
-// from_string(std::string str, bool interned)
-// {
-//   if (interned) {
-//     return string_to_symbol(str);
-//   } else {
-//     return pmt_t(new pmt_string(str));
-//   }
-// }
-
-// std::string
-// to_string(const pmt_t& p)
-// {
-//   if (p->is_string()) {
-//     return _string(p)->value();
-//   }
-
-//   throw wrong_type("pmt_to_string", p);
-// }
 
 ////////////////////////////////////////////////////////////////////////////
 //                             Number
