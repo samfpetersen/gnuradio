@@ -167,12 +167,12 @@ PMT_API bool is_string(const pmt_t& p);
 /*!
  * Return an interned or non-interned string PMT containing the given string.
  */
-PMT_API pmt_t from_string(std::string str, bool interned=false);
+PMT_API pmt_t from_string(const std::string &name, bool interned=true);
 
 /*!
  * If \p is a string PMT (interned or non-interned), return the contained string
  */
-PMT_API std::string to_string(const pmt_t& p);
+PMT_API const std::string to_string(const pmt_t& p)
 
 /*
  * ------------------------------------------------------------------------

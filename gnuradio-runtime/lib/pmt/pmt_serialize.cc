@@ -256,12 +256,15 @@ serialize(pmt_t obj, std::streambuf &sb)
   if(is_null(obj))
     return serialize_untagged_u8(PST_NULL, sb);
 
-  if(is_symbol(obj) || is_string(obj)) {
+  if(is_string(obj)) {
     const std::string s = to_string(obj);
     size_t len = s.size();
-    if (is_symbol(obj)) {
+    pmt_string = dynamic_cast<pmt_string*>(obj.get());
+    if (obj->next()) {
+      // Interned
       ok = serialize_untagged_u8(PST_SYMBOL, sb);
     } else {
+      // Not interned
       ok = serialize_untagged_u8(PST_STRING, sb);
     }
     ok &= serialize_untagged_u16(len, sb);
@@ -568,7 +571,7 @@ deserialize(std::streambuf &sb)
          PMT_F);
     if (sb.sgetn(tmpbuf, u16) != u16)
       goto error;
-    return from_string(std::string(tmpbuf, u16));
+    return from_string(std::string(tmpbuf, u16), false);
 
   case PST_INT32:
     if (!deserialize_untagged_u32(&u32, sb))

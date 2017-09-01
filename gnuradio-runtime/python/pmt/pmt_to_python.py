@@ -143,4 +143,5 @@ def python_to_pmt(p):
         if python_type is None:
             if p is None: return from_python(p)
         elif isinstance(p, python_type): return from_python(p)
+        elif isinstance(p, swig_int_ptr): return p
     raise ValueError("can't convert %s type to pmt (%s)"%(type(p),p))
