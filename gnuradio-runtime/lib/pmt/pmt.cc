@@ -334,13 +334,17 @@ symbol_to_string(const pmt_t& sym)
 }
 
 pmt_t
-from_string(const std::string &str, bool interned)
+from_string(const std::string &str)
 {
-  if (interned) {
-    return string_to_symbol(str);
-  } else {
-    return pmt_t(new pmt_string(str, false));
+  unsigned hash = hash_string(str) % get_symbol_hash_table_size();
+
+  // Does a symbol with this name already exist?
+  for (pmt_t sym = (*get_symbol_hash_table())[hash]; sym; sym = _string(sym)->next()) {
+    if (str == _string(sym)->name())
+      return sym;   // Yes.  Return it
   }
+
+  return pmt_t(new pmt_string(str, false));
 }
 
 const std::string

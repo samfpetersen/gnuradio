@@ -102,27 +102,10 @@ def uvector_to_numpy(uvector):
 	else:
 		raise ValueError("unsupported uvector data type for conversion to numpy array %s"%(uvector))
 
-class str_noninterned(str): 
-    """
-    A subclass of string used to indicate that this string should not be interned when converted from
-    Python to PMT. 
-    """
-    pass
-
-def pmt_is_noninterned_string(p):
-    return pmt.is_string(p) and not pmt.is_symbol(p)
-
-def pmt_to_str_noninterned(p):
-    return str_noninterned(pmt.to_string(p))
-
-def pmt_from_str_noninterned(val):
-    return pmt.from_string(val, False)
-
 type_mappings = ( #python type, check pmt type, to python, from python
     (None, pmt.is_null, lambda x: None, lambda x: PMT_NIL),
     (bool, pmt.is_bool, pmt.to_bool, pmt.from_bool),
-    (str_noninterned, pmt_is_noninterned_string, pmt_to_str_noninterned, pmt_from_str_noninterned),
-    (str, pmt.is_symbol, pmt.symbol_to_string, pmt.string_to_symbol),
+    (str, pmt.is_string, pmt.to_string, pmt.from_string),
     (unicode, lambda x: False, None, lambda x: pmt.string_to_symbol(x.encode('utf-8'))),
     (int, pmt.is_integer, pmt.to_long, pmt.from_long),
     (long, pmt.is_uint64, lambda x: long(pmt.to_uint64(x)), pmt.from_uint64),

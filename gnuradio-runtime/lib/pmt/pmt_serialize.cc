@@ -570,7 +570,7 @@ deserialize(std::streambuf &sb)
          PMT_F);
     if (sb.sgetn(tmpbuf, u16) != u16)
       goto error;
-    return from_string(std::string(tmpbuf, u16), false);
+    return from_string(std::string(tmpbuf, u16));
 
   case PST_INT32:
     if (!deserialize_untagged_u32(&u32, sb))
