@@ -262,7 +262,7 @@ get_symbol_hash_table()
   return &s_symbol_hash_table;
 }
 
-pmt_string::pmt_string(const std::string &name, bool interned) : d_name(name), d_interned(interned) {}
+pmt_string::pmt_string(const std::string &name) : d_name(name), d_next(NULL) {}
 
 
 static unsigned int
@@ -311,7 +311,7 @@ string_to_symbol(const std::string &name)
   
   // Nope.  Make a new one.
   std::cout << "Adding " << name << "\n";
-  pmt_t sym = pmt_t(new pmt_string(name, true));
+  pmt_t sym = pmt_t(new pmt_string(name));
   _string(sym)->set_next((*get_symbol_hash_table())[hash]);
   (*get_symbol_hash_table())[hash] = sym;
   return sym;
@@ -344,7 +344,7 @@ from_string(const std::string &str)
       return sym;   // Yes.  Return it
   }
 
-  return pmt_t(new pmt_string(str, false));
+  return pmt_t(new pmt_string(str));
 }
 
 const std::string
