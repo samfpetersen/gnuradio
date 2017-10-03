@@ -93,6 +93,8 @@ public:
 
   friend void intrusive_ptr_add_ref(pmt_base* p);
   friend void intrusive_ptr_release(pmt_base* p);
+  
+  int get_refcount_() { return refcount_; }
 
 # if (PMT_LOCAL_ALLOCATOR)
   void *operator new(size_t);
@@ -109,10 +111,13 @@ public:
   bool is_bool() const { return true; }
 };
 
+extern uint64_t total_symbols_created;
+extern const unsigned int SYMBOL_EXPIRATION;
 
 class pmt_symbol : public pmt_base
 {
   std::string	d_name;
+  uint64_t d_expiration;
   pmt_t		d_next;
 
 public:
@@ -124,6 +129,9 @@ public:
 
   pmt_t next() { return d_next; }		// symbol table link
   void set_next(pmt_t next) { d_next = next; }
+
+  void refresh() { d_expiration = total_symbols_created + SYMBOL_EXPIRATION; }
+  bool is_expired() { return d_expiration < total_symbols_created; }
 };
 
 class pmt_integer : public pmt_base

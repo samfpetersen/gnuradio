@@ -247,6 +247,8 @@ to_bool(pmt_t val)
 ////////////////////////////////////////////////////////////////////////////
 //                             Symbols
 ////////////////////////////////////////////////////////////////////////////
+uint64_t total_symbols_created = 0;
+const unsigned int SYMBOL_EXPIRATION = 1000;
 
 static const unsigned int
 get_symbol_hash_table_size()
@@ -262,8 +264,40 @@ get_symbol_hash_table()
   return &s_symbol_hash_table;
 }
 
-pmt_symbol::pmt_symbol(const std::string &name) : d_name(name){}
+pmt_symbol::pmt_symbol(const std::string &name) : d_name(name) {
+    refresh();
+    total_symbols_created++;
+}
 
+static void
+symbol_hash_gc(unsigned int hash) {
+    pmt_t last_sym;
+    pmt_t sym = (*get_symbol_hash_table())[hash];
+    
+    if (!sym) {
+        return;
+    }
+    
+    // First item in the linked list is a special case
+    if (sym->get_refcount_() == 2 && _symbol(sym)->is_expired()) {
+        (*get_symbol_hash_table())[hash] = _symbol(sym)->next();
+    }
+
+    // Iterate the rest of the linked list
+    last_sym = sym;
+    for (pmt_t sym = _symbol(last_sym)->next(); sym; sym = _symbol(sym)->next()) {
+        // Conditions for garbage collect:
+        // 1. The symbol has 2 references, that means it is not referred to externally (first ref is
+        //    hash table, second is local variable 'sym')
+        // 2. The symbol has 'expired', meaning `SYMBOL_EXPIRATION` number of symbols have been created 
+        //    since it was last retrieved.
+        if (sym->get_refcount_() == 2 && _symbol(sym)->is_expired()) {
+            _symbol(last_sym)->set_next(_symbol(sym)->next());
+        } else {
+            last_sym = sym;
+        }
+    }
+}
 
 static unsigned int
 hash_string(const std::string &s)
@@ -295,8 +329,10 @@ string_to_symbol(const std::string &name)
 
   // Does a symbol with this name already exist?
   for (pmt_t sym = (*get_symbol_hash_table())[hash]; sym; sym = _symbol(sym)->next()){
-    if (name == _symbol(sym)->name())
+    if (name == _symbol(sym)->name()) {
+      _symbol(sym)->refresh();
       return sym;		// Yes.  Return it
+    }
   }
   
   // Lock the table on insert for thread safety:
@@ -305,11 +341,16 @@ string_to_symbol(const std::string &name)
   // Re-do the search in case another thread inserted this symbol into the table
   // before we got the lock
   for (pmt_t sym = (*get_symbol_hash_table())[hash]; sym; sym = _symbol(sym)->next()){
-    if (name == _symbol(sym)->name())
+    if (name == _symbol(sym)->name()) {
+      _symbol(sym)->refresh();
       return sym;		// Yes.  Return it
+    }
   }
-  
-  // Nope.  Make a new one.
+
+  // First garbage collect this hash bin, removing symbols that are unused and expired
+  symbol_hash_gc(hash);
+
+  // Make a new symbol and add it to the hash table
   pmt_t sym = pmt_t(new pmt_symbol(name));
   _symbol(sym)->set_next((*get_symbol_hash_table())[hash]);
   (*get_symbol_hash_table())[hash] = sym;
