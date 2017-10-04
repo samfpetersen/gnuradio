@@ -281,6 +281,12 @@ symbol_hash_gc(unsigned int hash) {
     // First item in the linked list is a special case
     if (sym->get_refcount_() == 2 && _symbol(sym)->is_expired()) {
         (*get_symbol_hash_table())[hash] = _symbol(sym)->next();
+        
+        // Restore the symbol to its original place if another reference was 
+        // created since we last checked (necessary for thread safety)
+        if (sym->get_refcount_() != 1) {
+            (*get_symbol_hash_table())[hash] = sym;
+        }
     }
 
     // Iterate the rest of the linked list
@@ -293,6 +299,12 @@ symbol_hash_gc(unsigned int hash) {
         //    since it was last retrieved.
         if (sym->get_refcount_() == 2 && _symbol(sym)->is_expired()) {
             _symbol(last_sym)->set_next(_symbol(sym)->next());
+
+            // Restore the symbol to its original place if another reference was 
+            // created since we last checked (necessary for thread safety)
+            if (sym->get_refcount_() != 1) {
+                _symbol(last_sym)->set_next(sym);
+            }
         } else {
             last_sym = sym;
         }

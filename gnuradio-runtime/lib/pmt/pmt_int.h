@@ -94,7 +94,7 @@ public:
   friend void intrusive_ptr_add_ref(pmt_base* p);
   friend void intrusive_ptr_release(pmt_base* p);
   
-  int get_refcount_() { return refcount_; }
+  int get_refcount_() { return refcount_.load(boost::memory_order_relaxed); }
 
 # if (PMT_LOCAL_ALLOCATOR)
   void *operator new(size_t);
